@@ -12,7 +12,7 @@ tape('all boxes are decoded', function (t) {
     } else if (count === 1) {
       decode.decode(function () { })
     } else if (count === 2) {
-      decode.stream().resume()
+      decode.stream().on('data', function () { })
     } else {
       decode.ignore()
     }
