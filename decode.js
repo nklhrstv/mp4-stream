@@ -12,7 +12,7 @@ class Decoder extends stream.Writable {
 
     this._pending = 0
     this._missing = 0
-    this._ignoreEmpty = false
+    this._missingEmpty = false
     this._buf = null
     this._str = null
     this._cb = null
@@ -35,8 +35,8 @@ class Decoder extends stream.Writable {
     if (this.destroyed) return
     var drained = !this._str || !this._str._writableState.needDrain
 
-    while (data.length && !this.destroyed) {
-      if (!this._missing && !this._ignoreEmpty) {
+    while ((data.length && !this.destroyed) || (!this._missing && this._missingEmpty)) {
+      if (!this._missing && !this._missingEmpty) {
         this._writeBuffer = data
         this._writeCb = next
         return
@@ -56,7 +56,7 @@ class Decoder extends stream.Writable {
         this._buf = this._cb = this._str = this._ondrain = null
         drained = true
 
-        this._ignoreEmpty = false
+        this._missingEmpty = false
         if (stream) stream.end()
         if (cb) cb(buf)
       }
@@ -76,12 +76,18 @@ class Decoder extends stream.Writable {
 
   _buffer (size, cb) {
     this._missing = size
+    if (!this._missing) {
+      this._missingEmpty = true
+    }
     this._buf = Buffer.alloc(size)
     this._cb = cb
   }
 
   _stream (size, cb) {
     this._missing = size
+    if (!this._missing) {
+      this._missingEmpty = true
+    }
     this._str = new MediaData(this)
     this._ondrain = nextEvent(this._str, 'drain')
     this._pending++
@@ -145,8 +151,8 @@ class Decoder extends stream.Writable {
     this._headers = null
 
     this._missing = headers.contentLen
-    if (this._missing === 0) {
-      this._ignoreEmpty = true
+    if (!this._missing) {
+      this._missingEmpty = true
     }
     this._cb = () => {
       this._pending--
