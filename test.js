@@ -5,7 +5,9 @@ tape('generates and parses', function (t) {
   var encode = mp4.encode()
   var decode = mp4.decode()
 
+  var boxesCount = 0;
   decode.on('box', function (headers) {
+    boxesCount++;
     if (headers.type === 'ftyp') {
       decode.decode(function (box) {
         t.same(box.type, 'ftyp')
@@ -22,7 +24,6 @@ tape('generates and parses', function (t) {
       })
       stream.on('end', function () {
         t.same(Buffer.concat(buffer).toString(), 'hello world')
-        t.end()
       })
     } else {
       t.fail('unexpected box')
@@ -35,10 +36,18 @@ tape('generates and parses', function (t) {
     brandVersion: 1
   })
 
-  var stream = encode.mediaData(11)
-  stream.end('hello world')
+  var mdat1 = encode.mediaData(11, () => {
+    var mdat2 = encode.mediaData(11)
+    mdat2.end('hello world')
+    encode.finalize()
+  })
+  mdat1.end('hello world')
 
-  encode.finalize()
+  encode.on('end', function() {
+    t.same(boxesCount, 3)
+    t.end()
+  })
+
   encode.pipe(decode)
 })
 
