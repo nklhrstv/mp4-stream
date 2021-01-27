@@ -1,6 +1,41 @@
 var tape = require('tape')
 var mp4 = require('./')
 
+tape('all boxes are decoded', function (t) {
+  var encode = mp4.encode()
+  var decode = mp4.decode()
+
+  var count = 0
+  decode.on('box', function () {
+    if (count === 0) {
+      decode.ignore()
+    } else if (count === 1) {
+      decode.decode(function () { })
+    } else if (count === 2) {
+      decode.stream().resume()
+    } else {
+      decode.ignore()
+    }
+    count++
+  })
+
+  for (let i = 0; i < 4; i++) {
+    encode.box({
+      type: 'ftyp',
+      brand: 'mafi',
+      brandVersion: 1
+    })
+  }
+
+  encode.on('end', function () {
+    t.same(count, 4)
+    t.end()
+  })
+
+  encode.finalize()
+  encode.pipe(decode)
+})
+
 tape('generates and parses', function (t) {
   var encode = mp4.encode()
   var decode = mp4.decode()
