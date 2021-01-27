@@ -17,6 +17,11 @@ tape('all boxes are decoded', function (t) {
     count++
   })
 
+  decode.on('finish', function () {
+    t.same(count, 4)
+    t.end()
+  })
+
   for (let i = 0; i < 4; i++) {
     encode.box({
       type: 'ftyp',
@@ -24,11 +29,6 @@ tape('all boxes are decoded', function (t) {
       brandVersion: 1
     })
   }
-
-  encode.on('end', function () {
-    t.same(count, 4)
-    t.end()
-  })
 
   encode.finalize()
   encode.pipe(decode)
