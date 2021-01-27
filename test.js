@@ -128,3 +128,40 @@ tape('generates and parses with decoder/encoder in between', function (t) {
   })
   encode2.pipe(decode)
 })
+
+tape('parse empty atoms', function (t) {
+  var encode = mp4.encode()
+  var decode = mp4.decode()
+
+  var count = 0
+  decode.on('box', function () {
+    if (count === 0) {
+      decode.decode(function (box) {
+        t.same(box.buffer.length, 0)
+      })
+    } else if (count === 1) {
+      var stream = decode.stream()
+      stream.on('data', function () {
+        t.fail('unexpected data')
+      })
+    } else {
+      decode.ignore()
+    }
+    count++
+  })
+
+  decode.on('finish', () => {
+    t.same(count, 4)
+    t.end()
+  })
+
+  for (let i = 0; i < 4; i++) {
+    encode.box({
+      type: 'free',
+      buffer: Buffer.alloc(0)
+    })
+  }
+
+  encode.finalize()
+  encode.pipe(decode)
+})
