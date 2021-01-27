@@ -8,10 +8,8 @@ tape('all boxes are decoded', function (t) {
   var count = 0
   decode.on('box', function () {
     if (count === 0) {
-      decode.ignore()
-    } else if (count === 1) {
       decode.decode(function () { })
-    } else if (count === 2) {
+    } else if (count === 1) {
       decode.stream().on('data', function () { })
     } else {
       decode.ignore()
