@@ -8,15 +8,18 @@ tape('all boxes are decoded', function (t) {
   var count = 0
   decode.on('box', function () {
     if (count === 0) {
-      decode.ignore()
-    } else if (count === 1) {
       decode.decode(function () { })
-    } else if (count === 2) {
+    } else if (count === 1) {
       decode.stream().on('data', function () { })
     } else {
       decode.ignore()
     }
     count++
+  })
+
+  decode.on('finish', function () {
+    t.same(count, 4)
+    t.end()
   })
 
   for (let i = 0; i < 4; i++) {
@@ -26,11 +29,6 @@ tape('all boxes are decoded', function (t) {
       brandVersion: 1
     })
   }
-
-  encode.on('end', function () {
-    t.same(count, 4)
-    t.end()
-  })
 
   encode.finalize()
   encode.pipe(decode)
